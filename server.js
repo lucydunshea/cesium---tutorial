@@ -1,19 +1,19 @@
-var http = require('http');
-var fs = require('fs');
+// server.js
+// where your node app starts
+
+// init project
 const express = require('express');
 const app = express();
 
-const PORT=8080;
+// http://expressjs.com/en/starter/static-files.html
+app.use(express.static('.'));
 
-fs.readFile('./cesium.html', function (err, html) {
-    if (err) throw err;
-
-    http.createServer(function(request, response) {
-        response.writeHeader(200, {"Content-Type": "text/html"});
-        response.write(html);
-        response.end();
-    }).listen(PORT);
+// http://expressjs.com/en/starter/basic-routing.html
+app.get('/', function(request, response) {
+  response.sendFile(__dirname + '/index.html');
 });
 
-
-console.log(`Example app listening at http://localhost:${PORT}`);
+// listen for requests :)
+const listener = app.listen(process.env.PORT, function() {
+  console.log('Your app is listening on port ' + listener.address().port);
+});

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <link href="static/cesium/style.css" rel="stylesheet">
+</head>
+<body>
+  <button id="toggle-building">
+    Toggle new building
+  </button>
+  <div id="cesiumContainer"></div>
+  <script type="module">
+    // Your access token can be found at: https://ion.cesium.com/tokens.
+    // Replace `your_access_token` with your Cesium ion access token.
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5YWZhNTFjZS03ZWI0LTQ3YWQtYTQ1Yy00NjEwOWQ5MDQ4OTYiLCJpZCI6MTc1NDExLCJpYXQiOjE2OTg4Njk4NTJ9.xK5wqNNPM3g_Y46xdV9ifMBKNDXiVbwF85x-RAbc3qU';
+    
+    // Keep your Cesium.Ion.defaultAccessToken = 'your_token_here' line above. 
+    // STEP 2 CODE
+    // Initialize the viewer with Cesium World Terrain.
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      terrain: Cesium.Terrain.fromWorldTerrain(),
+    });
+
+    // Fly the camera to Denver, Colorado at the given longitude, latitude, and height.
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(-104.9965, 39.74248, 1000)
+    });
+
+    // Add Cesium OSM Buildings.
+    const buildingsTileset = await Cesium.createOsmBuildingsAsync();
+    viewer.scene.primitives.add(buildingsTileset);
+    
+    //STEP 3 CODE
+    async function addBuildingGeoJSON() {
+      // Load the geoJSON file
+      const geoJSONURL = await Cesium.IonResource.fromAssetId(2426763);
+      // Create the geometry and clamp to ground
+      const geoJSON = await Cesium.GeoJsonDataSource.load(geoJSONURL, { clampToGround: true});
+      // add to scene
+      const dataSource = await viewer.dataSources.add(geoJSON);
+      // modify polygons so draping only applies to terrain, not 3D buildings
+      for (const entity of dataSource.entities.values) {
+        entity.polygon.classificationType = Cesium.ClassificationType.TERRAIN;
+      }
+      // move cam to data source
+      viewer.flyTo(dataSource);
+    }
+    addBuildingGeoJSON();
+    
+    // Hide existing buildings on the site (w/ #D tiles Styling Language)
+    buildingsTileset.style = new Cesium.Cesium3DTileStyle({
+      // Create rule to control buildings show property
+      show: {
+        conditions : [
+          //Any building with these element ids will have show = false
+          ['${elementId} === 332469316', false],
+          ['${elementId} === 332469317', false],
+          ['${elementId} === 235368665', false],
+          ['${elementId} === 530288180', false],
+          ['${elementId} === 530288179', false],
+          ['${elementId} === 532245203', false],
+          ['${elementId} === 332466474', false],
+          // If a building does not have one of these elementIds, set `show = true`.
+          [true, true]
+        ]
+      },
+      // Set the default colour style
+      // if building has cesium#color property, use that, otherwise white
+      color: "Boolean(${feature['cesium#color']}) ? color(${feature['cesium#color']}) : color('#ffffff')"
+    });
+    
+    //Add the 3d tileset from cesium ion
+    const newBuildingTileset = await Cesium.Cesium3DTileset.fromIonAssetId(2426771);
+    viewer.scene.primitives.add(newBuildingTileset);
+    
+    // move cam to new building
+    viewer.flyTo(newBuildingTileset);
+    
+    // Toggle tilesets show property when button is clicked
+    document.querySelector('#toggle-building').onclick = function() {
+      newBuildingTileset.show = !newBuildingTileset.show;
+    };
+  </script>
+</body>
+</html>

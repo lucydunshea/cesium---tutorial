@@ -1,0 +1,1 @@
+Cesium.CesiumLoader.CESIUM_BASE_URL = '/static/cesium';
